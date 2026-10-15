@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Crypto Terminal WebApp</title>
+    <!-- Подключаем Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #0B0415;
+            --card-bg: #1A082E;
+            --accent-purple: #8A2BE2;
+            --neon-pink: #FF2A85;
+            --text-main: #FFFFFF;
+            --text-muted: #8E78B3;
+            --green: #00FF7F;
+            --red: #FF4D4D;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 15px;
+            padding-bottom: 70px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--accent-purple);
+            padding-bottom: 10px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-container {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent-purple), var(--neon-pink));
+            box-shadow: 0 0 12px rgba(138, 43, 226, 0.6);
+            border: 1px solid var(--neon-pink);
+        }
+
+            .logo-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .logo-fallback {
+            font-weight: bold;
+            font-size: 22px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 20px;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #FFFFFF, #B19CD9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Навигация по вкладкам */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid #32104F;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.3s;
+        }
+
+            .tab-btn.active {
+                background-color: var(--accent-purple);
+                color: var(--text-main);
+                border-color: var(--neon-pink);
+                box-shadow: 0 0 12px rgba(138, 43, 226, 0.4);
+            }
+
+        /* Контент вкладок */
+        .tab-content {
+            display: none;
+        }
+
+            .tab-content.active {
+                display: block;
+            }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #32104F;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .market-item, .exchange-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(138, 43, 226, 0.15);
+        }
+
+            .market-item:last-child, .exchange-item:last-child {
+                border-bottom: none;
+            }
+
+        .positive {
+            color: var(--green);
+        }
+
+        .negative {
+            color: var(--red);
+        }
+
+        /* Формы и инпуты */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            background-color: #0B0415;
+            border: 1px solid var(--accent-purple);
+            border-radius: 10px;
+            padding: 10px;
+            color: var(--text-main);
+            font-size: 16px;
+        }
+
+        .btn-action {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--neon-pink));
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        .result-box {
+            background-color: #0B0415;
+            border-left: 4px solid var(--accent-purple);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <div class="logo-container">
+                <img src="logo.png" alt="Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <span class="logo-fallback" style="display:none;">₿</span>
+            </div>
+            <h1>Hot Crypto WebApp</h1>
+        </div>
+        <div id="user-badge" style="font-size: 12px; color: var(--text-muted);">PRO v1.2</div>
+    </header>
+
+    <!-- Меню вкладок -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('market', event)">🔥 Рынок</button>
+        <button class="tab-btn" onclick="switchTab('calc', event)">📐 Калькулятор</button>
+        <button class="tab-btn" onclick="switchTab('exchanges', event)">⚖️ Биржи</button>
+        <button class="tab-btn" onclick="switchTab('dashboard', event)">📊 Дашборд</button>
+    </div>
+
+    <!-- Вкладка 1: Рынок -->
+    <div id="market" class="tab-content active">
+        <div class="card">
+            <h3 style="margin-bottom: 10px; font-size: 16px; color: var(--accent-purple);">Спотовые котировки (Bybit)</h3>
+            <div id="market-list">
+                <div class="market-item"><span>Загрузка данных...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка 2: Калькулятор риска -->
+    <div id="calc" class="tab-content">
+        <div class="card">
+            <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--accent-purple);">Риск-менеджмент позиций</h3>
+            <div class="form-group">
+                <label>Монета</label>
+                <select id="calc-coin">
+                    <option value="BTCUSDT">BTC/USDT</option>
+                    <option value="ETHUSDT">ETH/USDT</option>
+                    <option value="SOLUSDT">SOL/USDT</option>
+                    <option value="TONUSDT">TON/USDT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Депозит (USDT)</label>
+                <input type="number" id="calc-deposit" value="1000">
+            </div>
+            <div class="form-group">
+                <label>Риск (%)</label>
+                <input type="number" id="calc-risk" value="2">
+            </div>
+            <div class="form-group">
+                <label>Цена входа ($)</label>
+                <input type="number" id="calc-entry" value="65000">
+            </div>
+            <div class="form-group">
+                <label>Стоп-Лосс ($)</label>
+                <input type="number" id="calc-sl" value="63500">
+            </div>
+            <button class="btn-action" onclick="calculateRisk()">Рассчитать позицию</button>
+
+            <div id="calc-result" class="result-box" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Вкладка 3: Сравнение бирж -->
+    <div id="exchanges" class="tab-content">
+        <div class="card">
+            <h3 style="margin-bottom: 10px; font-size: 16px; color: var(--accent-purple);">Топ Бирж (BTC/USDT)</h3>
+            <div id="exchange-list">
+                <div class="exchange-item"><span>Сравнение шлюзов...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка 4: Дашборд -->
+    <div id="dashboard" class="tab-content">
+        <div class="card">
+            <h3 style="margin-bottom: 10px; font-size: 16px; color: var(--accent-purple);">Профиль инвестора</h3>
+            <p id="profile-name" style="margin-bottom: 8px;">Имя: Загрузка...</p>
+            <p style="margin-bottom: 8px;">Статус: <span style="color: var(--green);">💎 PRO Активен</span></p>
+            <p style="margin-bottom: 8px;">Активных алертов: <b>2</b></p>
+            <p>Копитрейд: <b>CryptoKing (ROI +340%)</b></p>
+        </div>
+    </div>
+
+    <script>
+                let tg = window.Telegram.WebApp;
+                tg.expand();
+
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    document.getElementById('profile-name').innerText = `Имя: ${tg.initDataUnsafe.user.first_name}`;
+                }
+
+                function switchTab(tabId, event) {
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                    event.currentTarget.classList.add('active');
+                }
+
+                async function loadMarket() {
+                    try {
+                        let response = await fetch('https://api.bybit.com/v5/market/tickers?category=spot');
+                        let data = await response.json();
+                        let tickers = data.result.list;
+                        let targetCoins = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "TONUSDT", "XRPUSDT"];
+                        let html = "";
+
+                        tickers.forEach(item => {
+                            if (targetCoins.includes(item.symbol)) {
+                                let price = parseFloat(item.lastPrice).toLocaleString('en-US', {minimumFractionDigits: 2});
+                                let change = parseFloat(item.price24hPcnt) * 100;
+                                let cls = change >= 0 ? "positive" : "negative";
+                                let sign = change >= 0 ? "+" : "";
+                                let name = item.symbol.replace("USDT", "");
+
+                                html += `<div class="market-item">
+                                    <span><b>${name}</b>/USDT</span>
+                                    <span>$${price}</span>
+                                    <span class="${cls}">${sign}${change.toFixed(2)}%</span>
+                                </div>`;
+                            }
+                        });
+                        document.getElementById('market-list').innerHTML = html;
+                    } catch (e) {
+                        document.getElementById('market-list').innerHTML = "Ошибка загрузки данных Bybit.";
+                    }
+                }
+
+                async function loadExchanges() {
+                    let html = "";
+                    let exchanges = [
+                        {name: "Bybit", url: "https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT", parse: d => d.result.list[0].lastPrice},
+                        {name: "Binance", url: "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", parse: d => d.price},
+                        {name: "MEXC", url: "https://api.mexc.com/api/v3/ticker/price?symbol=BTCUSDT", parse: d => d.price}
+                    ];
+
+                    for (let ex of exchanges) {
+                        try {
+                            let res = await fetch(ex.url);
+                            let data = await res.json();
+                            let price = parseFloat(ex.parse(data)).toLocaleString('en-US', {minimumFractionDigits: 2});
+                            html += `<div class="exchange-item"><span><b>${ex.name}</b></span><span>$${price}</span></div>`;
+                        } catch(e) {
+                            html += `<div class="exchange-item"><span><b>${ex.name}</b></span><span>Нет ответа</span></div>`;
+                        }
+                    }
+                    document.getElementById('exchange-list').innerHTML = html;
+                }
+
+                function calculateRisk() {
+                    let deposit = parseFloat(document.getElementById('calc-deposit').value);
+                    let riskPct = parseFloat(document.getElementById('calc-risk').value);
+                    let entry = parseFloat(document.getElementById('calc-entry').value);
+                    let sl = parseFloat(document.getElementById('calc-sl').value);
+
+                    let riskUsd = deposit * (riskPct / 100);
+                    let slDist = Math.abs(entry - sl) / entry;
+                    let posSize = riskUsd / slDist;
+                    let leverage = Math.max(1, Math.ceil(posSize / deposit));
+
+                    let resHtml = `
+                        🧭 Направление: <b>${sl < entry ? 'LONG 🟢' : 'SHORT 🔴'}</b><br>
+                        🛡 Риск на сделку: <b>$${riskUsd.toFixed(2)}</b> (${riskPct}%)<br>
+                        📊 Объем позиции: <b>$${posSize.toFixed(2)}</b><br>
+                        ⚡ Рекомендуемое плечо: <b>до ${leverage}x</b>
+                    `;
+                    let box = document.getElementById('calc-result');
+                    box.style.display = 'block';
+                    box.innerHTML = resHtml;
+                }
+
+                loadMarket();
+                loadExchanges();
+                setInterval(loadMarket, 10000);
+    </script>
+</body>
+</html>
